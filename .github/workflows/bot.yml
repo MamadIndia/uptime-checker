@@ -1,0 +1,40 @@
+name: Keep Bot Alive 
+
+on:
+  workflow_dispatch:
+  schedule:
+    # اجرای خودکار هر ۶ ساعت یک‌بار به عنوان پشتیبان
+    - cron: '0 */6 * * *'
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Run Bot (5h 50m)
+        # اجرای main.py به صورت بدون بافر (-u) برای نمایش لحظه‌ای لاگ‌ها
+        run: timeout 350m python -u main.py || true
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+
+      - name: Restart Workflow Immediately
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run bot.yml --ref ${{ github.ref_name }}
