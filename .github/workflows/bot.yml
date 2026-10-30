@@ -1,15 +1,17 @@
-name: Keep Bot Alive 
+name: Keep Bot Alive
 
 on:
   workflow_dispatch:
-  schedule:
-    # اجرای خودکار هر ۶ ساعت یک‌بار به عنوان پشتیبان
-    - cron: '0 */6 * * *'
+
+# جلوگیری از اجرای هم‌زمان دو نمونه از بات
+concurrency:
+  group: keep-bot-alive-single-instance
+  cancel-in-progress: false
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 355
+    timeout-minutes: 358
 
     steps:
       - name: Checkout Code
@@ -33,7 +35,7 @@ jobs:
           CHAT_ID: ${{ secrets.CHAT_ID }}
 
       - name: Restart Workflow Immediately
-        if: always()
+        if: ${{ !cancelled() }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
